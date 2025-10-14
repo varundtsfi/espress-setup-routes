@@ -30,6 +30,7 @@ npm -v   # Should show 10.x.x
 If you need to upgrade Node.js:
 
 **Using nvm (Recommended):**
+
 ```bash
 nvm install 20
 nvm use 20
@@ -37,6 +38,7 @@ nvm alias default 20
 ```
 
 **Using fnm:**
+
 ```bash
 fnm install 20
 fnm use 20
@@ -46,29 +48,32 @@ fnm default 20
 ## 🛠️ Installation
 
 1. **Clone the repository:**
+
 ```bash
 git clone https://github.com/varundtsfi/espress-setup-routes.git
 cd espress-setup-routes
 ```
 
 2. **Install dependencies:**
+
 ```bash
 npm install
 ```
 
 3. **Verify installation:**
+
 ```bash
 npm ci
 ```
 
 ## 📜 Available Scripts
 
-| Script | Description |
-|--------|-------------|
-| `npm run lint:check` | Check for linting errors |
-| `npm run lint:fix` | Auto-fix linting errors |
-| `npm run format:check` | Check code formatting |
-| `npm run format:fix` | Auto-format code |
+| Script                         | Description                  |
+| ------------------------------ | ---------------------------- |
+| `npm run lint:check`           | Check for linting errors     |
+| `npm run lint:fix`             | Auto-fix linting errors      |
+| `npm run format:check`         | Check code formatting        |
+| `npm run format:fix`           | Auto-format code             |
 | `npm run validate-branch-name` | Validate current branch name |
 
 ## 🔄 GitHub Actions CI/CD
@@ -94,11 +99,13 @@ The project uses GitHub Actions for continuous integration. The workflow runs on
 The workflow is already configured in `.github/workflows/nodejs-ci.yml`. To set it up in a new repository:
 
 1. **Create the workflow directory:**
+
 ```bash
 mkdir -p .github/workflows
 ```
 
 2. **Create the workflow file:**
+
 ```bash
 touch .github/workflows/nodejs-ci.yml
 ```
@@ -149,6 +156,7 @@ jobs:
 ```
 
 4. **Commit and push:**
+
 ```bash
 git add .github/workflows/nodejs-ci.yml
 git commit -m "chore: add GitHub Actions CI workflow"
@@ -162,12 +170,14 @@ git push
 #### 1. ESLint Version Conflict
 
 **Error:**
+
 ```
 ERESOLVE could not resolve
 eslint-config-airbnb-base requires eslint ^7.32.0 || ^8.2.0
 ```
 
 **Solution:**
+
 ```bash
 npm install --save-dev eslint@^8.57.0
 ```
@@ -175,6 +185,7 @@ npm install --save-dev eslint@^8.57.0
 #### 2. Node.js Version Warnings
 
 **Error:**
+
 ```
 EBADENGINE Unsupported engine
 required: { node: '>=20' }
@@ -182,6 +193,7 @@ current: { node: 'v18.x.x' }
 ```
 
 **Solution:** Upgrade to Node.js 20:
+
 ```bash
 nvm install 20
 nvm use 20
@@ -190,11 +202,13 @@ nvm use 20
 #### 3. Package Lock Corruption
 
 **Error:**
+
 ```
 404 Not Found - GET https://registry.npmjs.org/synckit/-/synckit-0.11.9.tgz
 ```
 
 **Solution:**
+
 ```bash
 rm package-lock.json
 npm cache clean --force
@@ -207,11 +221,13 @@ git push
 #### 4. Git Push Rejected
 
 **Error:**
+
 ```
 ! [rejected] development -> development (fetch first)
 ```
 
 **Solution:**
+
 ```bash
 git pull origin development
 git push origin development
@@ -238,6 +254,7 @@ This project enforces branch naming conventions. Valid branch name patterns:
 - `test/*` - Test updates
 
 **Example:**
+
 ```bash
 git checkout -b feature/add-user-authentication
 git checkout -b fix/resolve-login-bug
