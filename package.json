@@ -9,6 +9,8 @@
     "format:write": "prettier --write .",
     "lint:check": "eslint .",
     "lint:fix": "eslint --fix .",
+    "validate-branch-name": "bash scripts/validate_branch_name.sh",
+    "validate-commits": "bash scripts/validate_dev_commits.sh",
     "commitlint-local": "commitlint",
     "lint-staged-local": "lint-staged",
     "typecheck": "tsc --noEmit --project ./jsconfig.json --maxNodeModuleJsDepth 0",
