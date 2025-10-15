@@ -6,9 +6,7 @@ if [ -z "${BASH:-}" ]; then
 	exec bash "$0" "$@"
 fi
 
-. "$(dirname "$0")/helpers.sh"
-source "$(dirname "$0")/helpers.sh"
-
+. "$(dirname "$0")/helper.sh"
 
 # validate branch name
 
