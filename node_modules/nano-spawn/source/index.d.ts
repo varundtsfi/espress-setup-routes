@@ -140,7 +140,7 @@ export class SubprocessError extends Error implements Result {
 	output: Result['output'];
 	command: Result['command'];
 	durationMs: Result['durationMs'];
-	pipedFrom?: Result['pipedFrom'];
+	pipedFrom?: Exclude<Result['pipedFrom'], undefined>;
 
 	/**
 	The numeric [exit code](https://en.wikipedia.org/wiki/Exit_status) of the subprocess that was run.

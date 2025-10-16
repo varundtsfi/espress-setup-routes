@@ -38,3 +38,7 @@ jobs:
         run: npm run format:check
       - name: Validate Branch name
         run: npm run validate-branch-name $BRANCH_NAME
+
+      - name: Validate Commit Message in pull request
+        if: ${{ github.event_name == 'pull_request' }}
+        run: npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose --config commitlint.config.cjs
