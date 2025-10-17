@@ -1,0 +1,266 @@
+name: CI Validation (Enhanced)
+
+permissions: read-all
+
+env:
+  NODE_ENV: development
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+    branches: [main, development]
+  push:
+    branches:
+      - main
+      - development
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup-and-validate:
+    name: Setup & Basic Validation
+    runs-on: ubuntu-latest
+    
+    outputs:
+      branch-name: ${{ steps.branch-info.outputs.branch-name }}
+      node-version: ${{ steps.branch-info.outputs.node-version }}
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get Branch Information
+        id: branch-info
+        run: |
+          BRANCH_NAME="${{ github.head_ref || github.ref_name }}"
+          echo "branch-name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          echo "node-version=20.x" >> $GITHUB_OUTPUT
+          echo "Branch: $BRANCH_NAME"
+      
+      - name: Validate Branch Name
+        env:
+          BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+        run: |
+          echo "=================================================="
+          echo "Validating Branch Name"
+          echo "=================================================="
+          echo "Branch: $BRANCH_NAME"
+          
+          TASK_IDS="PC|ID"
+          VALID_BRANCH_REGEX="^(remotes/origin/)?(development|main)$|(^(remotes/origin/)?(feature|bugfix|enhancement|hotfix|feat|fix|refactor|chore|perf|docs|style)/(($TASK_IDS)-[[:digit:]]+/)([a-z0-9]-?)+[a-z0-9])$|(release/v[12]\.[0-9]+\.[0-9]+)$"
+          
+          if echo "$BRANCH_NAME" | grep -qE "$VALID_BRANCH_REGEX"; then
+            echo "✓ Branch name is valid"
+          else
+            echo "✗ Invalid branch name: $BRANCH_NAME"
+            echo ""
+            echo "Expected formats:"
+            echo "  • main, development"
+            echo "  • feature/PC-123/description"
+            echo "  • bugfix/ID-456/fix-name"
+            echo "  • hotfix/PC-789/urgent"
+            echo "  • release/v1.2.3"
+            exit 1
+          fi
+
+  code-quality:
+    name: Code Quality Checks
+    runs-on: ubuntu-latest
+    needs: setup-and-validate
+    
+    strategy:
+      matrix:
+        node-version: [20.x]
+        check: [lint, format]
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: |
+          echo "Installing dependencies..."
+          npm ci
+          echo "✓ Dependencies installed"
+      
+      - name: Run ${{ matrix.check }} Check
+        run: |
+          echo "=================================================="
+          echo "Running ${{ matrix.check }} checks"
+          echo "=================================================="
+          
+          if [ "${{ matrix.check }}" == "lint" ]; then
+            npm run lint:check && echo "✓ Linting passed"
+          elif [ "${{ matrix.check }}" == "format" ]; then
+            npm run format:check && echo "✓ Formatting passed"
+          fi
+
+  commit-validation:
+    name: Commit Message Validation
+    runs-on: ubuntu-latest
+    needs: setup-and-validate
+    if: github.event_name == 'pull_request'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Validate Commits
+        run: |
+          echo "=================================================="
+          echo "Validating Commit Messages"
+          echo "=================================================="
+          
+          CURRENT_BRANCH="${{ needs.setup-and-validate.outputs.branch-name }}"
+          echo "Branch: $CURRENT_BRANCH"
+          
+          # Skip for protected branches
+          if [[ "$CURRENT_BRANCH" =~ ^(main|development)$ ]]; then
+            echo "⚠ Protected branch detected. Skipping validation."
+            exit 0
+          fi
+          
+          # Check for commitlint config
+          if [ ! -f "commitlint.config.cjs" ] && [ ! -f ".commitlintrc.js" ] && [ ! -f ".commitlintrc.json" ]; then
+            echo "⚠ No commitlint config found. Skipping."
+            exit 0
+          fi
+          
+          # Fetch base branch
+          git fetch origin development
+          
+          # Count commits
+          COMMIT_COUNT=$(git rev-list --count origin/development..."$CURRENT_BRANCH" 2>/dev/null || echo "0")
+          
+          if [ "$COMMIT_COUNT" -eq 0 ]; then
+            echo "⚠ No new commits to validate"
+            exit 0
+          fi
+          
+          echo "Validating $COMMIT_COUNT commit(s)..."
+          
+          # Show commits
+          echo ""
+          echo "Commits to validate:"
+          git log --oneline origin/development.."$CURRENT_BRANCH"
+          echo ""
+          
+          # Run commitlint
+          if npx commitlint --from=HEAD~"$COMMIT_COUNT" --config commitlint.config.cjs; then
+            echo "✓ All commit messages are valid"
+          else
+            echo "✗ Commit message validation failed"
+            exit 1
+          fi
+
+  branch-sync-check:
+    name: Development Branch Sync
+    runs-on: ubuntu-latest
+    needs: setup-and-validate
+    if: github.event_name == 'pull_request' && github.base_ref == 'development'
+    
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check Sync Status
+        run: |
+          echo "=================================================="
+          echo "Development Branch Sync Check"
+          echo "=================================================="
+          
+          git fetch origin development
+          
+          CURRENT_BRANCH="${{ github.head_ref }}"
+          SYNC_STATUS=$(git rev-list --left-right --count origin/development..."$CURRENT_BRANCH")
+          
+          BEHIND=$(echo "$SYNC_STATUS" | awk '{print $1}')
+          AHEAD=$(echo "$SYNC_STATUS" | awk '{print $2}')
+          
+          echo "Branch: $CURRENT_BRANCH"
+          echo "Behind: $BEHIND commits"
+          echo "Ahead: $AHEAD commits"
+          echo ""
+          
+          if [ "$BEHIND" -gt 0 ]; then
+            echo "⚠ WARNING: Branch is $BEHIND commits behind origin/development"
+            echo "⚠ Consider updating your branch:"
+            echo "   git fetch origin development"
+            echo "   git rebase origin/development"
+            echo ""
+            
+            # Show commits behind
+            echo "Commits you're missing:"
+            git log --oneline --max-count=10 "$CURRENT_BRANCH"..origin/development
+            
+            # Don't fail, just warn
+            exit 0
+          else
+            echo "✓ Branch is up to date with origin/development"
+          fi
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: [setup-and-validate, code-quality, commit-validation, branch-sync-check]
+    if: always()
+    
+    steps:
+      - name: Check Results
+        run: |
+          echo "=================================================="
+          echo "CI Validation Summary"
+          echo "=================================================="
+          echo ""
+          
+          # Check job statuses
+          SETUP_STATUS="${{ needs.setup-and-validate.result }}"
+          QUALITY_STATUS="${{ needs.code-quality.result }}"
+          COMMIT_STATUS="${{ needs.commit-validation.result }}"
+          SYNC_STATUS="${{ needs.branch-sync-check.result }}"
+          
+          echo "Job Results:"
+          echo "  • Branch Validation: $SETUP_STATUS"
+          echo "  • Code Quality: $QUALITY_STATUS"
+          echo "  • Commit Validation: $COMMIT_STATUS"
+          echo "  • Sync Check: $SYNC_STATUS"
+          echo ""
+          
+          # Determine overall status
+          if [[ "$SETUP_STATUS" == "success" ]] && \
+             [[ "$QUALITY_STATUS" == "success" ]] && \
+             [[ "$COMMIT_STATUS" =~ ^(success|skipped)$ ]] && \
+             [[ "$SYNC_STATUS" =~ ^(success|skipped)$ ]]; then
+            echo "✓ All validations passed!"
+            echo ""
+            echo "🎉 Your code is ready to be merged!"
+            exit 0
+          else
+            echo "✗ Some validations failed!"
+            echo ""
+            echo "❌ Please review and fix the failing checks above."
+            exit 1
+          fi
