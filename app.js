@@ -3,7 +3,7 @@ const express = require("express");
 const app = express();
 // const mongoose = require("mongoose"); // Remove if not used
 // const connectDB = require("./db/connection"); // Remove if not used
-// Running on 5000 port
+// PORT used here
 const PORT = process.env.PORT || 5000;
 
 const products_routes = require("./routes/products");
