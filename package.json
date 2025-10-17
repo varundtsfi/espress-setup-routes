@@ -15,7 +15,9 @@
     "lint-staged-local": "lint-staged",
     "typecheck": "tsc --noEmit --project ./jsconfig.json --maxNodeModuleJsDepth 0",
     "sanitize:dryrun": "npm run format:check ; npm run lint:check",
-    "sanitize": "npm run format:write ; npm run lint:fix"
+    "sanitize": "npm run format:write ; npm run lint:fix",
+    "pre-push": "bash scripts/ci-validation.sh --skip-install",
+    "validate": "bash scripts/ci-validation.sh"
   },
   "keywords": [],
   "author": "",
