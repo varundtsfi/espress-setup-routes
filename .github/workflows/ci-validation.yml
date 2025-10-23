@@ -19,33 +19,33 @@ jobs:
   validate:
     name: Lint, Format, and Validate Branch & Commits
     runs-on: ubuntu-latest
-    
+
     defaults:
       run:
         shell: bash
-    
+
     strategy:
       matrix:
         node-version: [20.x]
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      
+
       - name: Setup Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: 'npm'
-      
+          cache: "npm"
+
       - name: Verify Prerequisites
         run: |
           echo "=================================================="
           echo "Checking Prerequisites"
           echo "=================================================="
-          
+
           # Check Node.js
           if command -v node &> /dev/null; then
             echo "✓ Node.js $(node --version) is installed"
@@ -53,7 +53,7 @@ jobs:
             echo "✗ Node.js is not installed"
             exit 1
           fi
-          
+
           # Check npm
           if command -v npm &> /dev/null; then
             echo "✓ npm $(npm --version) is installed"
@@ -61,7 +61,7 @@ jobs:
             echo "✗ npm is not installed"
             exit 1
           fi
-          
+
           # Check git
           if command -v git &> /dev/null; then
             echo "✓ $(git --version) is installed"
@@ -69,10 +69,10 @@ jobs:
             echo "✗ git is not installed"
             exit 1
           fi
-          
+
           echo ""
           echo "✓ All prerequisites are met"
-      
+
       - name: Install Dependencies
         run: |
           echo "=================================================="
@@ -81,13 +81,13 @@ jobs:
           npm ci
           echo ""
           echo "✓ Dependencies installed successfully"
-      
+
       - name: Run Linting Checks
         run: |
           echo "=================================================="
           echo "Running Linting Checks"
           echo "=================================================="
-          
+
           if npm run lint:check; then
             echo ""
             echo "✓ Linting passed successfully"
@@ -96,13 +96,13 @@ jobs:
             echo "✗ Linting failed. Please fix the issues and try again."
             exit 1
           fi
-      
+
       - name: Run Format Checks
         run: |
           echo "=================================================="
           echo "Running Format Checks"
           echo "=================================================="
-          
+
           if npm run format:check; then
             echo ""
             echo "✓ Format check passed successfully"
@@ -111,7 +111,7 @@ jobs:
             echo "✗ Format check failed. Run 'npm run format' to fix formatting issues."
             exit 1
           fi
-      
+
       - name: Validate Branch Name
         env:
           BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
@@ -121,11 +121,11 @@ jobs:
           echo "=================================================="
           echo "Current branch: $BRANCH_NAME"
           echo ""
-          
+
           # Define task IDs and validation regex
           TASK_IDS="PC|ID"
           VALID_BRANCH_REGEX="^(remotes/origin/)?(development|main)$|(^(remotes/origin/)?(feature|bugfix|enhancement|hotfix|feat|fix|refactor|chore|perf|docs|style)/(($TASK_IDS)-[[:digit:]]+/)([a-z0-9]-?)+[a-z0-9])$|(release/v[12]\.[0-9]+\.[0-9]+)$"
-          
+
           # Validate branch name
           if echo "$BRANCH_NAME" | grep -qE "$VALID_BRANCH_REGEX"; then
             echo "✓ Branch name [$BRANCH_NAME] is valid"
@@ -147,50 +147,50 @@ jobs:
             echo "  - release/v1.2.3 or release/v2.0.0"
             exit 1
           fi
-      
+
       - name: Validate Commit Messages
         if: github.event_name == 'pull_request'
         run: |
           echo "=================================================="
           echo "Validating Commit Messages"
           echo "=================================================="
-          
+
           # Get current branch
           CURRENT_BRANCH="${{ github.head_ref || github.ref_name }}"
           echo "Current branch: $CURRENT_BRANCH"
-          
+
           # Skip validation for main and development branches
           if [[ "$CURRENT_BRANCH" == "main" ]] || [[ "$CURRENT_BRANCH" == "development" ]]; then
             echo "⚠ On $CURRENT_BRANCH branch. Skipping commit validation."
             exit 0
           fi
-          
+
           # Check if commitlint config exists
           if [ ! -f "commitlint.config.cjs" ] && [ ! -f ".commitlintrc.js" ] && [ ! -f ".commitlintrc.json" ]; then
             echo "⚠ commitlint config not found. Skipping commit message validation."
             exit 0
           fi
-          
+
           # Fetch development branch
           git fetch origin development
-          
+
           # Count commits ahead of development
           NO_OF_COMMITS=$(git rev-list --left-right --count origin/development..."$CURRENT_BRANCH" 2>/dev/null | grep -oE '[[:digit:]]+' | tail -1 || echo "0")
-          
+
           if [ "$NO_OF_COMMITS" -eq 0 ]; then
             echo "⚠ No commits to validate"
             exit 0
           fi
-          
+
           echo "Validating $NO_OF_COMMITS commit(s)..."
           echo ""
-          
+
           # Get commit details
           COMMITS_INFO=$(git rev-list --left-right --pretty=oneline origin/development..."$CURRENT_BRANCH")
           echo "Commits to validate:"
           echo "$COMMITS_INFO"
           echo ""
-          
+
           # Run commitlint
           if npx commitlint --from=HEAD~"$NO_OF_COMMITS" --config commitlint.config.cjs; then
             echo ""
@@ -200,26 +200,26 @@ jobs:
             echo "✗ Commit messages validation failed"
             exit 1
           fi
-      
+
       - name: Check Sync with Development
         if: github.event_name == 'pull_request' && github.base_ref == 'development'
         run: |
           echo "=================================================="
           echo "Checking Sync with Development Branch"
           echo "=================================================="
-          
+
           git fetch origin development
-          
+
           CURRENT_BRANCH="${{ github.head_ref }}"
           SYNC_STATUS=$(git rev-list --left-right --count origin/development..."$CURRENT_BRANCH")
-          
+
           BEHIND=$(echo "$SYNC_STATUS" | awk '{print $1}')
           AHEAD=$(echo "$SYNC_STATUS" | awk '{print $2}')
-          
+
           echo "Branch: $CURRENT_BRANCH"
           echo "Behind origin/development by $BEHIND commits"
           echo "Ahead of origin/development by $AHEAD commits"
-          
+
           if [ "$BEHIND" -gt 0 ]; then
             echo ""
             echo "⚠ Warning: Your branch is behind origin/development by $BEHIND commits."
@@ -228,7 +228,7 @@ jobs:
             echo ""
             echo "✓ Your branch is up to date with origin/development"
           fi
-      
+
       - name: Validation Summary
         if: always()
         run: |
@@ -236,7 +236,7 @@ jobs:
           echo "=================================================="
           echo "CI Validation Summary"
           echo "=================================================="
-          
+
           # Check if all previous steps succeeded
           if [ "${{ job.status }}" == "success" ]; then
             echo "✓ All checks passed!"
