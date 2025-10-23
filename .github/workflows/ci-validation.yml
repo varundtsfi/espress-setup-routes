@@ -201,33 +201,33 @@ jobs:
             exit 1
           fi
 
-      - name: Check Sync with Development
-        if: github.event_name == 'pull_request' && github.base_ref == 'development'
-        run: |
-          echo "=================================================="
-          echo "Checking Sync with Development Branch"
-          echo "=================================================="
+      #- name: Check Sync with Development
+      #  if: github.event_name == 'pull_request' && github.base_ref == 'development'
+      #  run: |
+      #    echo "=================================================="
+      #    echo "Checking Sync with Development Branch"
+      #    echo "=================================================="
 
-          git fetch origin development
+      #    git fetch origin development
 
-          CURRENT_BRANCH="${{ github.head_ref }}"
-          SYNC_STATUS=$(git rev-list --left-right --count origin/development..."$CURRENT_BRANCH")
+      #    CURRENT_BRANCH="${{ github.head_ref }}"
+      #    SYNC_STATUS=$(git rev-list --left-right --count origin/development..."$CURRENT_BRANCH")
 
-          BEHIND=$(echo "$SYNC_STATUS" | awk '{print $1}')
-          AHEAD=$(echo "$SYNC_STATUS" | awk '{print $2}')
+      #    BEHIND=$(echo "$SYNC_STATUS" | awk '{print $1}')
+      #    AHEAD=$(echo "$SYNC_STATUS" | awk '{print $2}')
 
-          echo "Branch: $CURRENT_BRANCH"
-          echo "Behind origin/development by $BEHIND commits"
-          echo "Ahead of origin/development by $AHEAD commits"
+      #   echo "Branch: $CURRENT_BRANCH"
+      #   echo "Behind origin/development by $BEHIND commits"
+      #   echo "Ahead of origin/development by $AHEAD commits"
 
-          if [ "$BEHIND" -gt 0 ]; then
-            echo ""
-            echo "⚠ Warning: Your branch is behind origin/development by $BEHIND commits."
-            echo "⚠ Consider rebasing or merging development into your branch."
-          else
-            echo ""
-            echo "✓ Your branch is up to date with origin/development"
-          fi
+      #   if [ "$BEHIND" -gt 0 ]; then
+      #     echo ""
+      #     echo "⚠ Warning: Your branch is behind origin/development by $BEHIND commits."
+      #     echo "⚠ Consider rebasing or merging development into your branch."
+      #   else
+      #     echo ""
+      #     echo "✓ Your branch is up to date with origin/development"
+      #   fi
 
       - name: Validation Summary
         if: always()
