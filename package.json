@@ -1,0 +1,50 @@
+{
+  "name": "espress-setup-routes",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js",
+    "format:check": "prettier --check .",
+    "format:write": "prettier --write .",
+    "lint:check": "eslint .",
+    "lint:fix": "eslint --fix .",
+    "validate-branch-name": "bash scripts/validate_branch_name.sh",
+    "validate-commits": "bash scripts/validate_dev_commits.sh",
+    "commitlint-local": "commitlint",
+    "lint-staged-local": "lint-staged",
+    "typecheck": "tsc --noEmit --project ./jsconfig.json --maxNodeModuleJsDepth 0",
+    "sanitize:dryrun": "npm run format:check ; npm run lint:check",
+    "sanitize": "npm run format:write ; npm run lint:fix",
+    "pre-push": "bash scripts/ci-validation.sh --skip-install",
+    "validate": "bash scripts/ci-validation.sh"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
+    "dotenv": "^17.1.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-import": "^2.31.0",
+    "eslint-plugin-prettier": "^5.4.1",
+    "express": "^5.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.0",
+    "micromatch": "^4.0.8",
+    "mongoose": "^8.16.2",
+    "nodemon": "^3.1.10",
+    "prettier": "^3.5.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.31.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.37.5",
+    "glob": "^11.0.3",
+    "globals": "^16.3.0",
+    "rimraf": "^6.0.1"
+  }
+}
